@@ -1,0 +1,2759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#090d18">
+<title>StudyVault - Study Tracker</title>
+
+<!-- PWA Manifest Link -->
+<link rel="manifest" href="data:application/manifest+json,{
+  'name': 'StudyVault Study Tracker',
+  'short_name': 'StudyVault',
+  'start_url': '.',
+  'display': 'standalone',
+  'background_color': '#070b14',
+  'theme_color': '#090d18',
+  'icons': [{
+    'src': 'https://cdn-icons-png.flaticon.com/512/3389/3389083.png',
+    'sizes': '512x512',
+    'type': 'image/png'
+  }]
+}">
+
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs"
+        type="module"></script>
+
+<style>
+:root{
+  --bg:#070b14;
+  --card:rgba(20,27,43,.78);
+  --card2:#111827;
+  --text:#f4f7ff;
+  --muted:#98a2b7;
+  --line:rgba(255,255,255,.09);
+  --accent:#7c5cff;
+  --accent2:#00d4ff;
+  --green:#22c55e;
+  --danger:#ff5577;
+  --warning:#ffb020;
+  --shadow:0 20px 60px rgba(0,0,0,.32);
+  --transition:all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+  min-height:100vh;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at 10% 0%,rgba(124,92,255,.22),transparent 35%),
+    radial-gradient(circle at 90% 10%,rgba(0,212,255,.14),transparent 30%),
+    var(--bg);
+  overflow-x:hidden;
+}
+
+button,input{
+  font:inherit;
+  transition: var(--transition);
+}
+
+button{
+  cursor:pointer;
+}
+
+button:active, .upload-btn:active, .mini-btn:active, .open-btn:active{
+  transform:scale(0.97) !important;
+}
+
+.app{
+  width:min(1180px,100%);
+  margin:auto;
+  padding:18px;
+}
+
+/* TOP BAR */
+
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+  margin-bottom:24px;
+}
+
+.logo{
+  font-size:25px;
+  font-weight:900;
+  letter-spacing:-1px;
+}
+
+.logo span{
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;
+  color:transparent;
+}
+
+.subtitle{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:3px;
+}
+
+.top-actions{
+  display:flex;
+  gap:8px;
+}
+
+.icon-btn{
+  width:43px;
+  height:43px;
+  border-radius:14px;
+  border:1px solid var(--line);
+  background:var(--card);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  color:white;
+  font-size:19px;
+  transition: var(--transition);
+}
+
+.icon-btn:hover{
+  border-color:var(--accent);
+  transform:translateY(-2px);
+}
+
+/* HERO */
+
+.hero{
+  position:relative;
+  overflow:hidden;
+  min-height:300px;
+  padding:28px;
+  border:1px solid var(--line);
+  border-radius:28px;
+  background:
+    linear-gradient(135deg,rgba(124,92,255,.20),rgba(0,212,255,.05)),
+    var(--card);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  box-shadow:var(--shadow);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:30px;
+  animation: fadeIn 0.6s ease-out;
+}
+
+.hero:before{
+  content:"";
+  position:absolute;
+  width:260px;
+  height:260px;
+  border-radius:50%;
+  right:-80px;
+  top:-100px;
+  background:rgba(124,92,255,.18);
+  filter:blur(25px);
+  pointer-events:none;
+}
+
+.eyebrow{
+  color:#9d8cff;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:2px;
+  margin-bottom:10px;
+}
+
+.hero h1{
+  max-width:650px;
+  font-size:clamp(30px,5vw,54px);
+  line-height:1.03;
+  letter-spacing:-2px;
+}
+
+.hero h1 span{
+  background:linear-gradient(90deg,#a995ff,#38dcff);
+  -webkit-background-clip:text;
+  color:transparent;
+}
+
+.hero-text{
+  max-width:650px;
+  color:var(--muted);
+  line-height:1.65;
+  margin:15px 0 20px;
+}
+
+.upload-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:14px 20px;
+  border-radius:16px;
+  color:white;
+  font-weight:800;
+  background:linear-gradient(135deg,var(--accent),#5a42dd);
+  box-shadow:0 12px 30px rgba(124,92,255,.30);
+  transition: var(--transition);
+  user-select:none;
+}
+
+.upload-btn:hover{
+  transform:translateY(-3px);
+  box-shadow:0 16px 35px rgba(124,92,255,.45);
+}
+
+.upload-btn input{
+  display:none;
+}
+
+.hint{
+  color:#6f7890;
+  font-size:11px;
+  margin-top:10px;
+}
+
+.hero-streak{
+  position:relative;
+  flex:0 0 190px;
+  width:190px;
+  height:190px;
+  border-radius:50%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  background:
+    radial-gradient(circle,rgba(255,176,32,.15),transparent 55%),
+    rgba(10,15,27,.75);
+  border:1px solid rgba(255,176,32,.22);
+  box-shadow:inset 0 0 35px rgba(255,176,32,.12), 0 10px 30px rgba(0,0,0,.3);
+  animation:float 4s ease-in-out infinite;
+}
+
+.hero-streak .flame{
+  font-size:45px;
+  animation:pulse 1.7s infinite;
+}
+
+.hero-streak strong{
+  font-size:38px;
+  line-height:1;
+}
+
+.hero-streak small{
+  color:var(--muted);
+  font-size:10px;
+  letter-spacing:2px;
+  margin-top:5px;
+}
+
+/* STATS */
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin:16px 0;
+}
+
+.stat{
+  border:1px solid var(--line);
+  background:var(--card);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border-radius:20px;
+  padding:17px;
+  transition: var(--transition);
+}
+
+.stat:hover{
+  border-color:rgba(124,92,255,.3);
+  transform:translateY(-2px);
+}
+
+.stat-icon{
+  font-size:20px;
+}
+
+.stat strong{
+  display:block;
+  font-size:25px;
+  margin-top:8px;
+}
+
+.stat small{
+  color:var(--muted);
+}
+
+/* SECTION */
+
+.section-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:30px 0 14px;
+}
+
+.section-head h2{
+  font-size:20px;
+}
+
+.search{
+  width:min(300px,100%);
+  padding:11px 14px;
+  border-radius:13px;
+  border:1px solid var(--line);
+  outline:none;
+  background:var(--card);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  color:white;
+  transition: var(--transition);
+}
+
+.search:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(124,92,255,.15);
+}
+
+/* LIBRARY */
+
+.library{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+}
+
+.empty{
+  grid-column:1/-1;
+  padding:55px 20px;
+  text-align:center;
+  border:1px dashed rgba(255,255,255,.15);
+  border-radius:24px;
+  color:var(--muted);
+  background:var(--card);
+  backdrop-filter:blur(12px);
+}
+
+.empty .big{
+  font-size:50px;
+  margin-bottom:10px;
+  animation:bounce 2s infinite;
+}
+
+/* DOCUMENT CARD */
+
+.doc{
+  position:relative;
+  overflow:hidden;
+  border:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(22,30,48,.86),rgba(13,18,30,.86));
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border-radius:22px;
+  padding:18px;
+  transition: var(--transition);
+  animation: fadeIn 0.4s ease-out;
+}
+
+.doc:hover{
+  transform:translateY(-5px);
+  border-color:rgba(124,92,255,.45);
+  box-shadow:0 20px 50px rgba(0,0,0,.3);
+}
+
+.doc-top{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.file-icon{
+  width:49px;
+  height:49px;
+  display:grid;
+  place-items:center;
+  border-radius:15px;
+  background:rgba(124,92,255,.14);
+  font-size:24px;
+  transition: var(--transition);
+}
+
+.doc:hover .file-icon{
+  background:rgba(124,92,255,.25);
+  transform:scale(1.05);
+}
+
+.file-menu{
+  display:flex;
+  gap:5px;
+}
+
+.mini-btn{
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.04);
+  color:#dce3f2;
+  border-radius:10px;
+  width:34px;
+  height:34px;
+  transition: var(--transition);
+}
+
+.mini-btn:hover{
+  background:rgba(255,255,255,.1);
+  border-color:rgba(255,255,255,.2);
+}
+
+.doc-name{
+  margin-top:14px;
+  font-weight:800;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.doc-type{
+  color:var(--muted);
+  font-size:11px;
+  margin-top:4px;
+}
+
+.streak-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin:17px 0 12px;
+}
+
+.streak{
+  color:#ffb020;
+  font-weight:900;
+}
+
+.status{
+  font-size:10px;
+  color:#91a0ba;
+}
+
+.progress{
+  height:7px;
+  background:rgba(255,255,255,.07);
+  border-radius:99px;
+  overflow:hidden;
+}
+
+.progress div{
+  height:100%;
+  width:0;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  border-radius:99px;
+  transition:width .6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.meta{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:13px;
+}
+
+.meta-box{
+  padding:9px;
+  border-radius:12px;
+  background:rgba(255,255,255,.035);
+  transition: var(--transition);
+}
+
+.meta-box:hover{
+  background:rgba(255,255,255,.06);
+}
+
+.meta-box small{
+  display:block;
+  color:#737e95;
+  font-size:9px;
+}
+
+.meta-box b{
+  display:block;
+  margin-top:3px;
+  font-size:12px;
+}
+
+.open-btn{
+  width:100%;
+  border:0;
+  margin-top:13px;
+  padding:12px;
+  border-radius:13px;
+  color:white;
+  font-weight:800;
+  background:linear-gradient(90deg,var(--accent),#5e45df);
+  box-shadow:0 8px 20px rgba(124,92,255,.25);
+  transition: var(--transition);
+}
+
+.open-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 25px rgba(124,92,255,.4);
+}
+
+/* FLOATING 3-LINE MENU BUTTON STYLES */
+.floating-menu-container {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    z-index: 9999;
+}
+
+.floating-btn {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, var(--accent), #5a42dd);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 8px 25px rgba(124, 92, 255, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.floating-btn:hover {
+    transform: scale(1.08);
+}
+
+.floating-btn:active {
+    transform: scale(0.92);
+}
+
+.menu-dropdown {
+    position: absolute;
+    bottom: 65px;
+    right: 0;
+    background: var(--card2);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    width: 150px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.menu-option {
+    background: transparent;
+    color: var(--text);
+    border: none;
+    padding: 13px 16px;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.menu-option:hover {
+    background: rgba(124, 92, 255, 0.2);
+    color: white;
+}
+
+.hidden {
+    display: none;
+}
+
+/* DATA & ANALYTICS PAGE STYLES */
+.data-page {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: none;
+    flex-direction: column;
+    background: var(--bg);
+    animation: fade .25s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+}
+
+.data-page.active {
+    display: flex;
+}
+
+.data-header {
+    min-height: 70px;
+    padding: 15px 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10, 14, 23, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.data-header h2 {
+    font-size: 22px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    color: transparent;
+}
+
+.close-data-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: #141b2b;
+    color: white;
+    font-size: 18px;
+    transition: var(--transition);
+}
+
+.close-data-btn:hover {
+    background: var(--danger);
+    border-color: transparent;
+}
+
+.data-body {
+    max-width: 1000px;
+    width: 100%;
+    margin: 30px auto;
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.doc-data-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    overflow: hidden;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+}
+
+.doc-data-card:hover {
+    border-color: rgba(124, 92, 255, 0.4);
+}
+
+.doc-data-header-bar {
+    padding: 18px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    background: rgba(255, 255, 255, 0.02);
+    transition: background 0.2s;
+}
+
+.doc-data-header-bar:hover {
+    background: rgba(124, 92, 255, 0.08);
+}
+
+.doc-data-title {
+    font-size: 16px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.doc-quick-meta {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.dropdown-arrow {
+    font-size: 14px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.doc-data-card.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.doc-data-content-collapse {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
+    padding: 0 22px;
+}
+
+.doc-data-card.open .doc-data-content-collapse {
+    max-height: 1000px;
+    padding: 0 22px 22px 22px;
+}
+
+.doc-added-info {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+}
+
+.history-table-wrap {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 13px;
+}
+
+.history-table th {
+    background: rgba(124, 92, 255, 0.15);
+    color: var(--text);
+    padding: 12px 14px;
+    font-weight: 700;
+    border-bottom: 1px solid var(--line);
+}
+
+.history-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+    color: #dce3f2;
+}
+
+.history-table tr:last-child td {
+    border-bottom: none;
+}
+
+.history-table tr:hover td {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.no-history {
+    text-align: center;
+    padding: 20px;
+    color: var(--muted);
+    font-size: 13px;
+    font-style: italic;
+}
+
+/* READER */
+
+.reader{
+  position:fixed;
+  inset:0;
+  z-index:50;
+  display:none;
+  background:#05070c;
+  animation:fade .25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reader.active{
+  display:flex;
+  flex-direction:column;
+}
+
+.reader-head{
+  min-height:62px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 14px;
+  background:rgba(10,14,23,.92);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line);
+}
+
+.reader-title{
+  overflow:hidden;
+}
+
+.reader-title b{
+  display:block;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.reader-title small{
+  color:var(--muted);
+}
+
+.reader-actions{
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+
+.timer{
+  padding:9px 11px;
+  border-radius:12px;
+  background:rgba(34,197,94,.12);
+  color:#7df0a2;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+  border:1px solid rgba(34,197,94,.2);
+}
+
+.close-reader{
+  width:40px;
+  height:40px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:#141b2b;
+  color:white;
+  font-size:18px;
+  transition: var(--transition);
+}
+
+.close-reader:hover{
+  background:var(--danger);
+  border-color:transparent;
+}
+
+.reader-body{
+  flex:1;
+  overflow:auto;
+  display:flex;
+  justify-content:center;
+  padding:15px;
+}
+
+.pdf-page-wrap{
+  position:relative;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  width:100%;
+}
+
+#pdfCanvas{
+  max-width:100%;
+  height:auto;
+  background:white;
+  box-shadow:0 15px 50px rgba(0,0,0,.5);
+  border-radius:8px;
+}
+
+.reader-bottom{
+  min-height:56px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:8px;
+  background:rgba(11,15,24,.92);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border-top:1px solid var(--line);
+}
+
+.reader-bottom button{
+  border:1px solid var(--line);
+  background:#141a28;
+  color:white;
+  border-radius:11px;
+  padding:9px 13px;
+  transition: var(--transition);
+}
+
+.reader-bottom button:hover:not(:disabled){
+  background:var(--accent);
+  border-color:transparent;
+}
+
+.page-info{
+  color:var(--muted);
+  min-width:90px;
+  text-align:center;
+}
+
+/* NON PDF / GENERIC VIEWER */
+
+.file-message{
+  width:min(650px,100%);
+  margin:auto;
+  text-align:center;
+  padding:35px;
+  border:1px solid var(--line);
+  border-radius:25px;
+  background:var(--card);
+  backdrop-filter:blur(16px);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:15px;
+  animation: zoomIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.file-message .emoji{
+  font-size:60px;
+  animation:bounce 2s infinite;
+}
+
+.file-message h2{
+  margin:5px 0;
+}
+
+.file-message p{
+  color:var(--muted);
+  line-height:1.6;
+}
+
+.file-actions-group {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.action-btn-open {
+  flex: 1;
+  padding: 12px 20px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, var(--accent), #5e45df);
+  color: white;
+  font-weight: 800;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: var(--transition);
+}
+
+.action-btn-open:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 20px rgba(124,92,255,.3);
+}
+
+.action-btn-download {
+  flex: 1;
+  padding: 12px 20px;
+  border-radius: 12px;
+  background: #1f293d;
+  border: 1px solid var(--line);
+  color: white;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: var(--transition);
+}
+
+.action-btn-download:hover {
+  background: #2a3750;
+  transform:translateY(-2px);
+}
+
+/* TOAST */
+
+.toast{
+  position:fixed;
+  z-index:100;
+  left:50%;
+  bottom:25px;
+  transform:translate(-50%,20px);
+  opacity:0;
+  pointer-events:none;
+  padding:13px 18px;
+  border-radius:14px;
+  background:rgba(24,32,51,.95);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--line);
+  box-shadow:var(--shadow);
+  transition: var(--transition);
+  font-size:13px;
+}
+
+.toast.show{
+  opacity:1;
+  transform:translate(-50%,0);
+}
+
+/* MODAL */
+
+.modal{
+  position:fixed;
+  inset:0;
+  z-index:70;
+  display:none;
+  place-items:center;
+  padding:20px;
+  background:rgba(0,0,0,.65);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  animation:fade .2s ease;
+}
+
+.modal.active{
+  display:grid;
+}
+
+.modal-card{
+  width:min(450px,100%);
+  padding:23px;
+  border-radius:24px;
+  background:#111827;
+  border:1px solid var(--line);
+  box-shadow: var(--shadow);
+  animation: zoomIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-card h3{
+  margin-bottom:8px;
+}
+
+.modal-card p{
+  color:var(--muted);
+  line-height:1.5;
+  margin-bottom:18px;
+}
+
+.modal-buttons{
+  display:flex;
+  gap:8px;
+}
+
+.modal-buttons button{
+  flex:1;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  color:white;
+  background:#1a2233;
+  transition: var(--transition);
+}
+
+.modal-buttons button:hover{
+  background:#26324a;
+}
+
+.modal-buttons .danger{
+  background:var(--danger);
+  border-color:transparent;
+}
+
+.modal-buttons .danger:hover{
+  background:#ff335b;
+}
+
+/* LIGHT THEME */
+
+body.light{
+  --bg:#eef2f9;
+  --card:rgba(255,255,255,.88);
+  --card2:#fff;
+  --text:#111827;
+  --muted:#667085;
+  --line:rgba(15,23,42,.10);
+  --shadow:0 20px 50px rgba(30,41,59,.12);
+  background:
+    radial-gradient(circle at 10% 0%,rgba(124,92,255,.12),transparent 30%),
+    #eef2f9;
+}
+
+body.light .data-header{
+  background:rgba(255,255,255,.9);
+}
+
+body.light .doc-data-header-bar {
+  background: rgba(0, 0, 0, 0.01);
+}
+
+body.light .doc-data-header-bar:hover {
+  background: rgba(124, 92, 255, 0.06);
+}
+
+body.light .reader{
+  background:#f4f6fa;
+}
+
+body.light .reader-head,
+body.light .reader-bottom{
+  background:rgba(255,255,255,.9);
+}
+
+body.light .doc{
+  background:#fff;
+}
+
+body.light .icon-btn,
+body.light .mini-btn,
+body.light .close-reader,
+body.light .close-data-btn,
+body.light .reader-bottom button{
+  color:#111827;
+  background:#fff;
+}
+
+body.light .action-btn-download {
+  background: #e2e8f0;
+  color: #111827;
+}
+
+body.light .toast{
+  background:rgba(255,255,255,.95);
+  color:#111827;
+}
+
+body.light .modal-card{
+  background:#ffffff;
+}
+
+body.light .modal-buttons button{
+  background:#f1f5f9;
+  color:#111827;
+}
+
+body.light .history-table th {
+  background: rgba(124, 92, 255, 0.1);
+  color: #111827;
+}
+
+body.light .history-table td {
+  color: #334155;
+}
+
+/* ANIMATIONS */
+
+@keyframes float{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-8px)}
+}
+
+@keyframes pulse{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.12)}
+}
+
+@keyframes fade{
+  from{opacity:0}
+  to{opacity:1}
+}
+
+@keyframes fadeIn{
+  from{opacity:0; transform:translateY(10px);}
+  to{opacity:1; transform:translateY(0);}
+}
+
+@keyframes zoomIn{
+  from{opacity:0; transform:scale(0.95);}
+  to{opacity:1; transform:scale(1);}
+}
+
+@keyframes bounce{
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* RESPONSIVE */
+
+@media(max-width:850px){
+  .library{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .hero{
+    padding:23px;
+  }
+
+  .hero-streak{
+    flex-basis:150px;
+    width:150px;
+    height:150px;
+  }
+}
+
+@media(max-width:650px){
+  .app{
+    padding:12px;
+  }
+
+  .hero{
+    flex-direction:column;
+    align-items:flex-start;
+    min-height:auto;
+  }
+
+  .hero-streak{
+    align-self:center;
+    width:145px;
+    height:145px;
+  }
+
+  .stats{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .library{
+    grid-template-columns:1fr;
+  }
+
+  .section-head{
+    align-items:stretch;
+    flex-direction:column;
+  }
+
+  .search{
+    width:100%;
+  }
+
+  .reader-head{
+    padding:8px;
+  }
+
+  .reader-title{
+    min-width:0;
+    flex:1;
+  }
+
+  .timer{
+    font-size:11px;
+  }
+
+  .reader-body{
+    padding:8px;
+  }
+  
+  .file-actions-group {
+    flex-direction: column;
+  }
+  
+  .doc-quick-meta {
+    display: none;
+  }
+}
+
+@media(max-width:390px){
+  .hero h1{
+    font-size:31px;
+  }
+
+  .stats{
+    gap:8px;
+  }
+
+  .stat{
+    padding:13px;
+  }
+
+  .stat strong{
+    font-size:21px;
+  }
+
+  .reader-title small{
+    display:none;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div>
+      <div class="logo">Study<span>Vault</span></div>
+      <div class="subtitle">Your personal reading & streak tracker</div>
+    </div>
+
+    <div class="top-actions">
+      <button class="icon-btn" id="notifBtn" title="Enable Notifications">🔔</button>
+      <button class="icon-btn" id="themeBtn" title="Change theme">🌙</button>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+
+    <div>
+      <div class="eyebrow">YOUR STUDY LIBRARY</div>
+
+      <h1>
+        Turn every book into a
+        <span>streak.</span>
+      </h1>
+
+      <p class="hero-text">
+        Upload your PDF, PowerPoint or Word files, read them and keep
+        separate study time, progress and streak information for
+        every document.
+      </p>
+
+      <label class="upload-btn">
+        <input id="fileInput"
+               type="file"
+               multiple
+               accept=".pdf,.ppt,.pptx,.doc,.docx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+        ＋ Add Document (PDF, PPT, Word)
+      </label>
+
+      <div class="hint">
+        Files, study data & push alert schedules stored locally.
+      </div>
+    </div>
+
+    <div class="hero-streak">
+      <div class="flame">🔥</div>
+      <strong id="heroStreak">0</strong>
+      <small>BEST STREAK</small>
+    </div>
+
+  </section>
+
+  <!-- STATS -->
+  <section class="stats">
+
+    <div class="stat">
+      <span class="stat-icon">📚</span>
+      <strong id="docCount">0</strong>
+      <small>Documents</small>
+    </div>
+
+    <div class="stat">
+      <span class="stat-icon">🔥</span>
+      <strong id="currentStreak">0</strong>
+      <small>Best current streak</small>
+    </div>
+
+    <div class="stat">
+      <span class="stat-icon">⏱️</span>
+      <strong id="totalTime">0m</strong>
+      <small>Total reading</small>
+    </div>
+
+    <div class="stat">
+      <span class="stat-icon">📖</span>
+      <strong id="todayTime">0m</strong>
+      <small>Today's reading</small>
+    </div>
+
+  </section>
+
+  <!-- LIBRARY -->
+  <div class="section-head">
+    <h2>📚 My Library</h2>
+
+    <input id="searchInput"
+           class="search"
+           placeholder="Search Documents...">
+  </div>
+
+  <section id="library" class="library"></section>
+
+</div>
+
+<!-- FLOATING 3-LINE MENU BUTTON & OPTIONS -->
+<div class="floating-menu-container">
+    <button id="menuToggleBtn" class="floating-btn" title="Menu">
+        ☰
+    </button>
+    
+    <div id="menuDropdown" class="menu-dropdown hidden">
+        <button class="menu-option" onclick="alert('Profile clicked')">1. Profile</button>
+        <button class="menu-option" id="homeMenuOption">2. Menu</button>
+        <button class="menu-option" id="dataMenuOption">3. Data</button>
+    </div>
+</div>
+
+<!-- DATA & ANALYTICS PAGE -->
+<div id="dataPage" class="data-page">
+  <div class="data-header">
+    <h2>📊 Detailed Document Analytics & History</h2>
+    <button class="close-data-btn" id="closeDataPage">✕</button>
+  </div>
+  <div class="data-body" id="dataPageContent">
+    <!-- Dynamic Document Dropdown Cards will be injected here -->
+  </div>
+</div>
+
+<!-- READER -->
+<div id="reader" class="reader">
+
+  <div class="reader-head">
+
+    <div class="reader-title">
+      <b id="readerTitle">Document</b>
+      <small id="readerStatus">Reading session active</small>
+    </div>
+
+    <div class="reader-actions">
+
+      <div class="timer" id="timer">
+        00:00:00
+      </div>
+
+      <button class="close-reader" id="closeReader">
+        ✕
+      </button>
+
+    </div>
+
+  </div>
+
+  <div class="reader-body" id="readerBody">
+
+    <div class="pdf-page-wrap" id="pdfViewer">
+      <canvas id="pdfCanvas"></canvas>
+    </div>
+
+    <div class="file-message" id="nonPdfMessage" style="display:none">
+      <div class="emoji" id="docTypeEmoji">📊</div>
+      <h2 id="docTypeName">Office Document</h2>
+      <p id="docTypeDesc">
+        Your file is safely saved in the StudyVault library and reading-time tracking is active.
+      </p>
+      
+      <!-- Action Buttons -->
+      <div class="file-actions-group">
+        <button id="openFileBtn" class="action-btn-open">📂 View Online</button>
+        <a id="downloadPdfBtn" class="action-btn-download" href="#" download>📥 Download File</a>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="reader-bottom" id="readerControls">
+
+    <button id="prevPage">← Previous</button>
+
+    <div class="page-info" id="pageInfo">
+      Page 1 / 1
+    </div>
+
+    <button id="nextPage">Next →</button>
+
+  </div>
+
+</div>
+
+
+<!-- DELETE MODAL -->
+<div class="modal" id="deleteModal">
+
+  <div class="modal-card">
+
+    <h3>Delete document?</h3>
+
+    <p>
+      This will remove the document and its local study history
+      from StudyVault.
+    </p>
+
+    <div class="modal-buttons">
+      <button id="cancelDelete">Cancel</button>
+      <button id="confirmDelete" class="danger">Delete</button>
+    </div>
+
+  </div>
+
+</div>
+
+
+<div class="toast" id="toast"></div>
+
+
+<script type="module">
+
+/* ============================================================
+   STUDYVAULT - FULL COMBINED SETUP (MENU RETURN TO HOME)
+   ============================================================ */
+
+import * as pdfjsLib
+from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs";
+
+
+/* ------------------------------------------------------------
+   FLOATING MENU & NAVIGATION
+   ------------------------------------------------------------ */
+
+const menuToggleBtn = document.getElementById('menuToggleBtn');
+const menuDropdown = document.getElementById('menuDropdown');
+const homeMenuOption = document.getElementById('homeMenuOption');
+const dataMenuOption = document.getElementById('dataMenuOption');
+const dataPage = document.getElementById('dataPage');
+const closeDataPage = document.getElementById('closeDataPage');
+
+menuToggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menuDropdown.classList.toggle('hidden');
+});
+
+document.addEventListener('click', () => {
+    if (!menuDropdown.classList.contains('hidden')) {
+        menuDropdown.classList.add('hidden');
+    }
+});
+
+// "2. Menu" click hone par data page close ho jayega aur user index.html home page pe aajayega
+homeMenuOption.addEventListener('click', () => {
+    menuDropdown.classList.add('hidden');
+    dataPage.classList.remove('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+dataMenuOption.addEventListener('click', () => {
+    menuDropdown.classList.add('hidden');
+    renderDataPage();
+    dataPage.classList.add('active');
+});
+
+closeDataPage.addEventListener('click', () => {
+    dataPage.classList.remove('active');
+});
+
+
+/* ------------------------------------------------------------
+   REGISTER SERVICE WORKER FOR PWA / APK
+   ------------------------------------------------------------ */
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("data:text/javascript;base64," + btoa(`
+      self.addEventListener('install', e => self.skipWaiting());
+      self.addEventListener('activate', e => e.claim());
+      self.addEventListener('fetch', e => {});
+    `)).catch(err => console.log("SW registration failed", err));
+  });
+}
+
+
+/* ------------------------------------------------------------
+   STORAGE
+   ------------------------------------------------------------ */
+
+const STORAGE_KEY = "studyvault_phase1_documents";
+
+let documents = JSON.parse(
+  localStorage.getItem(STORAGE_KEY) || "[]"
+);
+
+documents.forEach(doc => {
+  if (!doc.sessionLogs) doc.sessionLogs = [];
+});
+
+let activeDocumentId = null;
+let activePdf = null;
+let activePage = 1;
+
+let sessionStart = null;
+let sessionTimer = null;
+let totalSessionSeconds = 0;
+let currentSessionOpenTime = null;
+
+let deleteId = null;
+
+
+/* ------------------------------------------------------------
+   DOM
+   ------------------------------------------------------------ */
+
+const fileInput = document.getElementById("fileInput");
+const library = document.getElementById("library");
+const searchInput = document.getElementById("searchInput");
+
+const docCount = document.getElementById("docCount");
+const currentStreak = document.getElementById("currentStreak");
+const heroStreak = document.getElementById("heroStreak");
+const totalTime = document.getElementById("totalTime");
+const todayTime = document.getElementById("todayTime");
+
+const reader = document.getElementById("reader");
+const readerTitle = document.getElementById("readerTitle");
+const readerStatus = document.getElementById("readerStatus");
+const timer = document.getElementById("timer");
+
+const pdfViewer = document.getElementById("pdfViewer");
+const pdfCanvas = document.getElementById("pdfCanvas");
+const nonPdfMessage = document.getElementById("nonPdfMessage");
+const docTypeEmoji = document.getElementById("docTypeEmoji");
+const docTypeName = document.getElementById("docTypeName");
+const docTypeDesc = document.getElementById("docTypeDesc");
+const openFileBtn = document.getElementById("openFileBtn");
+const downloadPdfBtn = document.getElementById("downloadPdfBtn");
+
+const prevPage = document.getElementById("prevPage");
+const nextPage = document.getElementById("nextPage");
+const pageInfo = document.getElementById("pageInfo");
+
+const closeReader = document.getElementById("closeReader");
+
+const toast = document.getElementById("toast");
+
+const themeBtn = document.getElementById("themeBtn");
+const notifBtn = document.getElementById("notifBtn");
+
+const deleteModal = document.getElementById("deleteModal");
+const cancelDelete = document.getElementById("cancelDelete");
+const confirmDelete = document.getElementById("confirmDelete");
+
+
+/* ------------------------------------------------------------
+   HELPERS
+   ------------------------------------------------------------ */
+
+function saveData(){
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(documents)
+  );
+}
+
+
+function makeId(){
+  return Date.now().toString(36) +
+         Math.random().toString(36).slice(2,8);
+}
+
+
+function todayKey(){
+  const d = new Date();
+
+  return d.getFullYear() + "-" +
+    String(d.getMonth()+1).padStart(2,"0") + "-" +
+    String(d.getDate()).padStart(2,"0");
+}
+
+
+function formatDate(value){
+
+  if(!value) return "Never";
+
+  const d = new Date(value);
+
+  if(isNaN(d)) return "Never";
+
+  return d.toLocaleString([],{
+    day:"2-digit",
+    month:"short",
+    hour:"2-digit",
+    minute:"2-digit"
+  });
+}
+
+
+function formatDuration(seconds){
+
+  seconds = Math.max(0,Math.floor(seconds));
+
+  const h = Math.floor(seconds/3600);
+  const m = Math.floor((seconds%3600)/60);
+  const s = seconds%60;
+
+  if(h > 0){
+    return h + "h " + m + "m";
+  }
+
+  if(m > 0){
+    return m + "m " + s + "s";
+  }
+
+  return s + "s";
+}
+
+
+function showToast(message){
+
+  toast.textContent = message;
+
+  toast.classList.add("show");
+
+  setTimeout(()=>{
+    toast.classList.remove("show");
+  },2600);
+}
+
+
+/* ------------------------------------------------------------
+   STREAK & 72-HOUR EXPIRATION LOGIC
+   ------------------------------------------------------------ */
+
+function getDaysBetween(dateA,dateB){
+
+  const a = new Date(dateA);
+  const b = new Date(dateB);
+
+  a.setHours(0,0,0,0);
+  b.setHours(0,0,0,0);
+
+  return Math.round(
+    Math.abs(b-a)/(1000*60*60*24)
+  );
+}
+
+
+function updateStreak(doc){
+
+  const history = doc.history || {};
+
+  const keys = Object.keys(history)
+    .filter(k => history[k] >= 600)
+    .sort();
+
+  if(keys.length === 0){
+    doc.currentStreak = 0;
+    return;
+  }
+
+  let streak = 1;
+
+  for(let i=keys.length-1;i>0;i--){
+
+    const newer = keys[i];
+    const older = keys[i-1];
+
+    const diff = getDaysBetween(newer,older);
+
+    if(diff === 1){
+      streak++;
+    }else{
+      break;
+    }
+  }
+
+  const lastDay = keys[keys.length-1];
+
+  const daysFromToday =
+    getDaysBetween(lastDay,todayKey());
+
+  if(daysFromToday > 3){
+    doc.currentStreak = 0;
+  }else{
+    doc.currentStreak = streak;
+  }
+
+  doc.bestStreak =
+    Math.max(doc.bestStreak || 0,streak);
+}
+
+
+function updateAllStreaks(){
+
+  documents.forEach(updateStreak);
+
+  saveData();
+}
+
+
+/* ------------------------------------------------------------
+   BACKGROUND PUSH NOTIFICATIONS
+   ------------------------------------------------------------ */
+
+notifBtn.addEventListener("click", async () => {
+  if (!("Notification" in window)) {
+    showToast("This browser does not support desktop notifications.");
+    return;
+  }
+  
+  const permission = await Notification.requestPermission();
+  if (permission === "granted") {
+    showToast("Notifications enabled successfully!");
+    new Notification("StudyVault", {
+      body: "Streak alerts & 24hr/48hr reminders are now active!",
+      icon: "https://cdn-icons-png.flaticon.com/512/3389/3389083.png"
+    });
+  } else {
+    showToast("Notification permission denied.");
+  }
+});
+
+
+function checkInactivityAndNotify() {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+  const now = Date.now();
+  const lastCheckKey = "studyvault_last_notif_check";
+  const lastCheck = parseInt(localStorage.getItem(lastCheckKey) || "0");
+
+  if (now - lastCheck < 12 * 60 * 60 * 1000) return;
+
+  documents.forEach(doc => {
+    if (!doc.lastOpened) return;
+    const hoursInactive = (now - new Date(doc.lastOpened).getTime()) / (1000 * 60 * 60);
+
+    if (hoursInactive >= 48 && hoursInactive < 72) {
+      new Notification("⚠️ Danger: Streak Expiring Soon!", {
+        body: `You haven't read "${doc.name}" in 48 hours! Open it now before your streak drops to 0!`,
+        icon: "https://cdn-icons-png.flaticon.com/512/3389/3389083.png"
+      });
+    } else if (hoursInactive >= 24 && hoursInactive < 26) {
+      new Notification("🔥 Keep Your Streak Alive!", {
+        body: `Time for your daily reading goal in "${doc.name}". Don't break the chain!`,
+        icon: "https://cdn-icons-png.flaticon.com/512/3389/3389083.png"
+      });
+    }
+  });
+
+  localStorage.setItem(lastCheckKey, now.toString());
+}
+
+
+/* ------------------------------------------------------------
+   FILE UPLOAD
+   ------------------------------------------------------------ */
+
+fileInput.addEventListener("change",async(event)=>{
+
+  const files = [...event.target.files];
+
+  if(!files.length) return;
+
+  for(const file of files){
+
+    const extension =
+      file.name.split(".").pop().toLowerCase();
+
+    if(!["pdf","ppt","pptx","doc","docx"].includes(extension)){
+      showToast(file.name + " format is not supported.");
+      continue;
+    }
+
+    try{
+
+      const dataUrl =
+        await fileToDataURL(file);
+
+      const doc = {
+        id:makeId(),
+        name:file.name,
+        type:extension,
+        size:file.size,
+        dataUrl:dataUrl,
+
+        addedAt:new Date().toISOString(),
+
+        lastOpened:null,
+        lastClosed:null,
+
+        currentPage:1,
+        totalPages:1,
+        progress:0,
+
+        currentStreak:0,
+        bestStreak:0,
+
+        totalSeconds:0,
+        sessionSeconds:0,
+        lastSessionDate:todayKey(),
+
+        history:{},
+        sessionLogs: []
+      };
+
+      documents.unshift(doc);
+
+      showToast("Added: " + file.name);
+
+    }catch(error){
+
+      console.error(error);
+
+      showToast(
+        "Could not save " + file.name +
+        ". Browser storage may be full."
+      );
+    }
+  }
+
+  saveData();
+  render();
+  fileInput.value="";
+});
+
+
+function fileToDataURL(file){
+
+  return new Promise((resolve,reject)=>{
+
+    const reader = new FileReader();
+
+    reader.onload = () =>
+      resolve(reader.result);
+
+    reader.onerror = reject;
+
+    reader.readAsDataURL(file);
+  });
+}
+
+
+/* ------------------------------------------------------------
+   LIBRARY RENDER
+   ------------------------------------------------------------ */
+
+function render(){
+
+  updateAllStreaks();
+  checkInactivityAndNotify();
+
+  const query =
+    searchInput.value.trim().toLowerCase();
+
+  const visible =
+    documents.filter(doc =>
+      doc.name.toLowerCase().includes(query)
+    );
+
+  docCount.textContent = documents.length;
+
+  const best =
+    documents.reduce(
+      (max,doc)=>
+        Math.max(max,doc.currentStreak || 0),
+      0
+    );
+
+  currentStreak.textContent = best;
+  heroStreak.textContent = best;
+
+  const total =
+    documents.reduce(
+      (sum,doc)=>
+        sum + (doc.totalSeconds || 0),
+      0
+    );
+
+  totalTime.textContent = formatDuration(total);
+
+  let today = 0;
+
+  const key = todayKey();
+
+  documents.forEach(doc=>{
+    today += (doc.history?.[key] || 0);
+  });
+
+  todayTime.textContent = formatDuration(today);
+
+
+  if(visible.length === 0){
+
+    library.innerHTML = `
+      <div class="empty">
+        <div class="big">📚</div>
+        <h3>${documents.length ? "No document found" : "Your library is empty"}</h3>
+        <p>
+          ${documents.length
+            ? "Try another search."
+            : "Tap “＋ Add Document” to add your first study file."
+          }
+        </p>
+      </div>
+    `;
+
+    return;
+  }
+
+
+  library.innerHTML =
+    visible.map(doc => documentCard(doc)).join("");
+}
+
+
+function documentCard(doc){
+
+  let icon = "📄";
+  if(doc.type === "pdf") icon = "📕";
+  else if(["ppt","pptx"].includes(doc.type)) icon = "📊";
+  else if(["doc","docx"].includes(doc.type)) icon = "📝";
+
+  const progress =
+    Math.round((doc.progress || 0)*100);
+
+  const today =
+    doc.history?.[todayKey()] || 0;
+
+  let status = "Not started";
+
+  if(today >= 600){
+    status = "✓ Today's goal done";
+  }else if(today > 0){
+    status = Math.ceil((600-today)/60) +
+             " min left today";
+  }
+
+  return `
+
+    <article class="doc">
+
+      <div class="doc-top">
+
+        <div class="file-icon">
+          ${icon}
+        </div>
+
+        <div class="file-menu">
+
+          <button
+            class="mini-btn"
+            onclick="deleteDocument('${doc.id}')"
+            title="Delete">
+            🗑️
+          </button>
+
+        </div>
+
+      </div>
+
+      <div class="doc-name"
+           title="${escapeHtml(doc.name)}">
+        ${escapeHtml(doc.name)}
+      </div>
+
+      <div class="doc-type">
+        ${doc.type.toUpperCase()} •
+        ${formatBytes(doc.size)}
+      </div>
+
+      <div class="streak-row">
+
+        <div class="streak">
+          🔥 ${doc.currentStreak || 0} day streak
+        </div>
+
+        <div class="status">
+          ${status}
+        </div>
+
+      </div>
+
+      <div class="progress">
+        <div style="width:${progress}%"></div>
+      </div>
+
+      <div class="meta">
+
+        <div class="meta-box">
+          <small>READING TIME</small>
+          <b>${formatDuration(doc.totalSeconds || 0)}</b>
+        </div>
+
+        <div class="meta-box">
+          <small>PROGRESS</small>
+          <b>${progress}%</b>
+        </div>
+
+        <div class="meta-box">
+          <small>LAST OPENED</small>
+          <b>${formatDate(doc.lastOpened)}</b>
+        </div>
+
+        <div class="meta-box">
+          <small>LAST CLOSED</small>
+          <b>${formatDate(doc.lastClosed)}</b>
+        </div>
+
+      </div>
+
+      <button
+        class="open-btn"
+        onclick="openDocument('${doc.id}')">
+
+        📖 ${doc.lastOpened ? "Continue Reading" : "Start Reading"}
+
+      </button>
+
+    </article>
+  `;
+}
+
+
+function escapeHtml(text){
+
+  return text
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+
+function formatBytes(bytes){
+
+  if(!bytes) return "0 KB";
+
+  const units=["B","KB","MB","GB"];
+
+  const i =
+    Math.floor(
+      Math.log(bytes)/Math.log(1024)
+    );
+
+  return (
+    bytes/Math.pow(1024,i)
+  ).toFixed(i ? 1 : 0)
+  + " " + units[i];
+}
+
+
+searchInput.addEventListener(
+  "input",
+  render
+);
+
+
+/* ------------------------------------------------------------
+   OPEN DOCUMENT
+   ------------------------------------------------------------ */
+
+window.openDocument = async function(id){
+
+  const doc =
+    documents.find(x=>x.id===id);
+
+  if(!doc) return;
+
+  activeDocumentId = id;
+  currentSessionOpenTime = new Date();
+
+  doc.lastOpened =
+    currentSessionOpenTime.toISOString();
+
+  const currentDay = todayKey();
+  if (doc.lastSessionDate !== currentDay) {
+    doc.sessionSeconds = 0;
+    doc.lastSessionDate = currentDay;
+  }
+
+  saveData();
+
+  reader.classList.add("active");
+
+  readerTitle.textContent = doc.name;
+
+  readerStatus.textContent =
+    "Reading session active • minimum 10 minutes/day";
+
+  sessionStart = Date.now();
+
+  totalSessionSeconds = doc.sessionSeconds || 0;
+
+  updateTimerDisplay();
+
+  clearInterval(sessionTimer);
+
+  sessionTimer = setInterval(()=>{
+    const elapsedSinceOpen = Math.floor((Date.now() - sessionStart) / 1000);
+    totalSessionSeconds = (doc.sessionSeconds || 0) + elapsedSinceOpen;
+    updateTimerDisplay();
+  },1000);
+
+
+  if(doc.type === "pdf"){
+
+    pdfViewer.style.display="flex";
+    nonPdfMessage.style.display="none";
+    document.getElementById("readerControls")
+      .style.display="flex";
+
+    await loadPdf(doc);
+
+  }else{
+
+    pdfViewer.style.display="none";
+    nonPdfMessage.style.display="flex";
+
+    document.getElementById("readerControls")
+      .style.display="none";
+
+    if(["ppt","pptx"].includes(doc.type)){
+      docTypeEmoji.textContent = "📊";
+      docTypeName.textContent = "PowerPoint Presentation";
+      docTypeDesc.textContent = "Your PPT/PPTX file is open. Reading time tracking is active. Click 'View Online' to open it or download it directly.";
+    } else if(["doc","docx"].includes(doc.type)){
+      docTypeEmoji.textContent = "📝";
+      docTypeName.textContent = "Word Document";
+      docTypeDesc.textContent = "Your Word document is ready. Reading time tracking is active. Click 'View Online' or download it directly.";
+    }
+
+    const blob = dataURLToBlob(doc.dataUrl);
+    const blobUrl = URL.createObjectURL(blob);
+
+    openFileBtn.onclick = function() {
+      const newTab = window.open();
+      if(newTab) {
+        newTab.location.href = blobUrl;
+      } else {
+        showToast("Please allow popups to view the file.");
+      }
+    };
+    
+    downloadPdfBtn.href = blobUrl;
+    downloadPdfBtn.download = doc.name;
+  }
+
+  render();
+};
+
+
+function dataURLToBlob(dataUrl){
+  const parts = dataUrl.split(',');
+  const byteString = atob(parts[1]);
+  const mimeString = parts[0].split(':')[1].split(';')[0];
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  return new Blob([ab], {type: mimeString});
+}
+
+
+async function loadPdf(doc){
+
+  try{
+
+    activePdf =
+      await pdfjsLib.getDocument(
+        {data:dataURLToUint8Array(doc.dataUrl)}
+      ).promise;
+
+    doc.totalPages = activePdf.numPages;
+
+    activePage =
+      Math.min(
+        Math.max(doc.currentPage || 1,1),
+        activePdf.numPages
+      );
+
+    await renderPdfPage();
+
+    saveData();
+
+  }catch(error){
+
+    console.error(error);
+
+    showToast(
+      "PDF could not be opened."
+    );
+  }
+}
+
+
+function dataURLToUint8Array(dataUrl){
+
+  const base64 =
+    dataUrl.split(",")[1];
+
+  const binary =
+    atob(base64);
+
+  const bytes =
+    new Uint8Array(binary.length);
+
+  for(let i=0;i<binary.length;i++){
+    bytes[i]=binary.charCodeAt(i);
+  }
+
+  return bytes;
+}
+
+
+async function renderPdfPage(){
+
+  if(!activePdf) return;
+
+  const page =
+    await activePdf.getPage(activePage);
+
+  const containerWidth =
+    document.getElementById("readerBody").clientWidth;
+
+  const baseViewport =
+    page.getViewport({scale:1});
+
+  const availableWidth =
+    Math.max(
+      280,
+      Math.min(
+        900,
+        containerWidth-20
+      )
+    );
+
+  const scale =
+    availableWidth /
+    baseViewport.width;
+
+  const viewport =
+    page.getViewport({scale});
+
+  const canvas = pdfCanvas;
+
+  const context =
+    canvas.getContext("2d");
+
+  canvas.width =
+    viewport.width;
+
+  canvas.height =
+    viewport.height;
+
+  await page.render({
+    canvasContext:context,
+    viewport
+  }).promise;
+
+  pageInfo.textContent =
+    `Page ${activePage} / ${activePdf.numPages}`;
+
+  prevPage.disabled =
+    activePage <= 1;
+
+  nextPage.disabled =
+    activePage >= activePdf.numPages;
+
+  updateProgress();
+}
+
+
+/* ------------------------------------------------------------
+   PDF NAVIGATION
+   ------------------------------------------------------------ */
+
+prevPage.addEventListener("click",async()=>{
+
+  if(!activePdf || activePage<=1)
+    return;
+
+  activePage--;
+
+  await renderPdfPage();
+});
+
+
+nextPage.addEventListener("click",async()=>{
+
+  if(!activePdf ||
+     activePage>=activePdf.numPages)
+    return;
+
+  activePage++;
+
+  await renderPdfPage();
+});
+
+
+function updateProgress(){
+
+  const doc =
+    documents.find(x=>x.id===activeDocumentId);
+
+  if(!doc || !activePdf) return;
+
+  doc.currentPage = activePage;
+
+  doc.totalPages = activePdf.numPages;
+
+  doc.progress =
+    activePage /
+    activePdf.numPages;
+
+  saveData();
+}
+
+
+/* ------------------------------------------------------------
+   READING SESSION & DETAILED LOGGING
+   ------------------------------------------------------------ */
+
+function updateTimerDisplay(){
+
+  timer.textContent =
+    formatClock(totalSessionSeconds);
+}
+
+
+function formatClock(seconds){
+
+  const h =
+    Math.floor(seconds/3600);
+
+  const m =
+    Math.floor((seconds%3600)/60);
+
+  const s =
+    seconds%60;
+
+  return [
+    h,
+    m,
+    s
+  ]
+  .map(x => String(x).padStart(2,"0"))
+  .join(":");
+}
+
+
+function saveSession(){
+
+  if(!activeDocumentId)
+    return;
+
+  if(!sessionStart)
+    return;
+
+  const doc =
+    documents.find(
+      x=>x.id===activeDocumentId
+    );
+
+  if(!doc)
+    return;
+
+  const seconds =
+    Math.floor(
+      (Date.now()-sessionStart)/1000
+    );
+
+  if(seconds > 0) {
+    doc.totalSeconds =
+      (doc.totalSeconds || 0) + seconds;
+
+    doc.sessionSeconds = totalSessionSeconds;
+    doc.lastSessionDate = todayKey();
+
+    const key =
+      todayKey();
+
+    doc.history[key] =
+      (doc.history[key] || 0) + seconds;
+
+    const closeTime = new Date();
+    doc.lastClosed = closeTime.toISOString();
+
+    if (!doc.sessionLogs) doc.sessionLogs = [];
+    
+    const optionsDate = { year: 'numeric', month: 'short', day: 'numeric' };
+    const optionsTime = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+    const optionsDay = { weekday: 'long' };
+
+    const openDateStr = currentSessionOpenTime ? currentSessionOpenTime.toLocaleDateString([], optionsDate) : closeTime.toLocaleDateString([], optionsDate);
+    const dayStr = currentSessionOpenTime ? currentSessionOpenTime.toLocaleDateString([], optionsDay) : closeTime.toLocaleDateString([], optionsDay);
+    const openTimeStr = currentSessionOpenTime ? currentSessionOpenTime.toLocaleTimeString([], optionsTime) : "N/A";
+    const closeTimeStr = closeTime.toLocaleTimeString([], optionsTime);
+
+    doc.sessionLogs.unshift({
+      date: openDateStr,
+      day: dayStr,
+      openTime: openTimeStr,
+      closeTime: closeTimeStr,
+      duration: formatDuration(seconds)
+    });
+
+    updateStreak(doc);
+    saveData();
+  }
+
+  sessionStart = null;
+  currentSessionOpenTime = null;
+}
+
+
+function closeReaderWindow(){
+
+  saveSession();
+
+  clearInterval(sessionTimer);
+
+  sessionTimer = null;
+
+  activePdf = null;
+
+  activeDocumentId = null;
+
+  reader.classList.remove("active");
+
+  render();
+}
+
+
+closeReader.addEventListener(
+  "click",
+  closeReaderWindow
+);
+
+
+document.addEventListener(
+  "visibilitychange",
+  ()=>{
+
+    if(!activeDocumentId)
+      return;
+
+    if(document.hidden){
+
+      saveSession();
+
+      clearInterval(sessionTimer);
+
+      sessionTimer=null;
+
+      sessionStart=null;
+      currentSessionOpenTime=null;
+
+      readerStatus.textContent =
+        "Reading paused • return to continue";
+
+    }else{
+
+      sessionStart=Date.now();
+      currentSessionOpenTime=new Date();
+
+      const doc = documents.find(x => x.id === activeDocumentId);
+      if(doc) {
+        totalSessionSeconds = doc.sessionSeconds || 0;
+      }
+
+      clearInterval(sessionTimer);
+
+      sessionTimer=setInterval(()=>{
+        const elapsedSinceOpen = Math.floor((Date.now() - sessionStart) / 1000);
+        if(doc) {
+          totalSessionSeconds = (doc.sessionSeconds || 0) + elapsedSinceOpen;
+        }
+        updateTimerDisplay();
+
+      },1000);
+
+      readerStatus.textContent =
+        "Reading session active • minimum 10 minutes/day";
+    }
+  }
+);
+
+
+/* ------------------------------------------------------------
+   RENDER DETAILED DATA PAGE WITH COLLAPSIBLE DROPDOWNS
+   ------------------------------------------------------------ */
+
+function renderDataPage() {
+  const container = document.getElementById("dataPageContent");
+
+  if (documents.length === 0) {
+    container.innerHTML = `
+      <div class="empty">
+        <div class="big">📊</div>
+        <h3>No Data Available</h3>
+        <p>Upload and open documents to see detailed session history records here.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = documents.map((doc, index) => {
+    let icon = "📄";
+    if(doc.type === "pdf") icon = "📕";
+    else if(["ppt","pptx"].includes(doc.type)) icon = "📊";
+    else if(["doc","docx"].includes(doc.type)) icon = "📝";
+
+    const addedFormatted = formatDate(doc.addedAt);
+
+    let logsHtml = "";
+    if (!doc.sessionLogs || doc.sessionLogs.length === 0) {
+      logsHtml = `<tr><td colspan="5" class="no-history">No past session records yet. Open and read this document to log activity!</td></tr>`;
+    } else {
+      logsHtml = doc.sessionLogs.map(log => `
+        <tr>
+          <td><b>${log.date}</b></td>
+          <td><span style="color:var(--accent2); font-weight:600;">${log.day}</span></td>
+          <td>⏰ ${log.openTime}</td>
+          <td>⏱️ ${log.closeTime}</td>
+          <td><b style="color:var(--green);">${log.duration}</b></td>
+        </tr>
+      `).join("");
+    }
+
+    return `
+      <div class="doc-data-card" id="docCard_${doc.id}">
+        <div class="doc-data-header-bar" onclick="toggleDocDropdown('${doc.id}')">
+          <div class="doc-data-title">
+            <span>${icon}</span> ${escapeHtml(doc.name)}
+          </div>
+          <div class="doc-quick-meta">
+            <span>📂 ${doc.type.toUpperCase()}</span>
+            <span class="dropdown-arrow">▼</span>
+          </div>
+        </div>
+
+        <div class="doc-data-content-collapse">
+          <div class="doc-added-info">
+            📅 <b>Added On:</b> ${addedFormatted} &nbsp;|&nbsp; ⏱️ <b>Total Reading Time:</b> ${formatDuration(doc.totalSeconds || 0)}
+          </div>
+
+          <div class="history-table-wrap">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Day</th>
+                  <th>Opened Time</th>
+                  <th>Closed Time</th>
+                  <th>Duration</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${logsHtml}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+window.toggleDocDropdown = function(id) {
+  const card = document.getElementById(`docCard_${id}`);
+  if(card) {
+    card.classList.toggle('open');
+  }
+};
+
+
+/* ------------------------------------------------------------
+   DELETE
+   ------------------------------------------------------------ */
+
+window.deleteDocument=function(id){
+
+  deleteId=id;
+
+  deleteModal.classList.add("active");
+};
+
+
+cancelDelete.addEventListener(
+  "click",
+  ()=>{
+    deleteModal.classList.remove("active");
+    deleteId=null;
+  }
+);
+
+
+confirmDelete.addEventListener(
+  "click",
+  ()=>{
+
+    if(!deleteId) return;
+
+    documents =
+      documents.filter(
+        doc=>doc.id!==deleteId
+      );
+
+    saveData();
+
+    deleteModal.classList.remove("active");
+
+    showToast("Document deleted.");
+
+    deleteId=null;
+
+    render();
+  }
+);
+
+
+/* ------------------------------------------------------------
+   THEME
+   ------------------------------------------------------------ */
+
+const savedTheme =
+  localStorage.getItem("studyvault_theme");
+
+if(savedTheme==="light"){
+  document.body.classList.add("light");
+  themeBtn.textContent = "🌙";
+}else{
+  themeBtn.textContent = "☀️";
+}
+
+
+themeBtn.addEventListener(
+  "click",
+  ()=>{
+
+    document.body.classList.toggle("light");
+
+    const light =
+      document.body.classList.contains("light");
+
+    localStorage.setItem(
+      "studyvault_theme",
+      light ? "light" : "dark"
+    );
+
+    themeBtn.textContent =
+      light ? "🌙" : "☀️";
+  }
+);
+
+
+/* ------------------------------------------------------------
+   AUTO STREAK CHECK
+   ------------------------------------------------------------ */
+
+setInterval(()=>{
+
+  updateAllStreaks();
+  render();
+
+},60000);
+
+
+/* ------------------------------------------------------------
+   INITIAL LOAD
+   ------------------------------------------------------------ */
+
+render();
+
+</script>
+
+</body>
+</html>
